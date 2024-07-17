@@ -1,0 +1,57 @@
+version: "3"
+
+services:
+  web:
+    user: 0:0
+    image: registry.activitypub.software/transfem-org/sharkey:${SOFTWARE_VERSION_TAG}
+    restart: always
+    links:
+      - db
+      - redis
+    depends_on:
+      - db
+      - redis
+    ports:
+      - "172.17.0.1:50223:3000"
+    # networks:
+    #   - internal_network
+    #   - external_network
+    volumes:
+      - ./storage/files:/sharkey/files
+      - ./storage/sharkey/.config:/sharkey/.config:ro
+
+  redis:
+    restart: always
+    image: elestio/redis:7.0
+    # networks:
+    #   - internal_network
+    volumes:
+      - ./storage/redis:/data
+
+  db:
+    restart: always
+    image: elestio/postgres:15
+    # networks:
+    #   - internal_network
+    env_file:
+      - ./.env
+    volumes:
+      - ./storage/db:/var/lib/postgresql/data
+    ports:
+      - 172.17.0.1:37826:5432
+  # networks:
+  #   internal_network:
+  #     internal: true
+  #   external_network:
+
+  pgadmin:
+    image: elestio/pgadmin:latest
+    restart: always
+    environment:
+      PGADMIN_DEFAULT_EMAIL: ${ADMIN_EMAIL}
+      PGADMIN_DEFAULT_PASSWORD: ${ADMIN_PASSWORD}
+      PGADMIN_LISTEN_PORT: 8080
+    ports:
+      - "172.17.0.1:34931:8080"
+    volumes:
+      - ./storage/servers.json:/pgadmin4/servers.json
